@@ -21,9 +21,11 @@
         input[type="checkbox"] { flex: 0 0 auto; }
         input[type="number"] { flex: 0 0 76px; width: 76px; min-height: 40px; }
         .work-item { gap: 12px; }
-        .work-item[hidden] { display: none; }
-        #extraSearch { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #aaa; border-radius: 6px; font: inherit; color: inherit; background: var(--tg-theme-bg-color, #fff); }
-        #extraCount, #emptySearch { font-size: 14px; }
+        .extra-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px 40px; gap: 8px; margin-top: 12px; padding-bottom: 12px; border-bottom: 1px solid #ccc; }
+        .extra-select { grid-column: 1 / -1; width: 100%; min-width: 0; min-height: 44px; padding: 10px; font: inherit; color: inherit; background: var(--tg-theme-bg-color, #fff); border: 1px solid #aaa; border-radius: 6px; }
+        .extra-name { min-width: 0; font-size: 14px; overflow-wrap: anywhere; align-self: center; }
+        .remove-extra { width: 40px; height: 40px; font-size: 24px; border: 1px solid #aaa; border-radius: 6px; color: inherit; background: var(--tg-theme-bg-color, #fff); cursor: pointer; }
+        #addExtra { width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid var(--tg-theme-button-color, #3390ec); border-radius: 6px; background: transparent; color: var(--tg-theme-button-color, #3390ec); font: inherit; cursor: pointer; }
         #sendBtn:disabled { opacity: .6; }
         
         #sendBtn { position: fixed; bottom: 15px; left: 15px; right: 15px; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 10px; border: none; background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -185,10 +187,8 @@
 
         <details id="extraSection">
             <summary>Дополнительные работы и оборудование</summary>
-            <input type="search" id="extraSearch" placeholder="Поиск по названию" aria-label="Поиск дополнительных работ">
-            <div id="extraCount" aria-live="polite"></div>
             <div id="extraWorks"></div>
-            <p id="emptySearch" hidden>Ничего не найдено</p>
+            <button type="button" id="addExtra">+ Добавить ещё</button>
         </details>
 
     </div>
@@ -201,29 +201,50 @@
         // Snapshot of "Список работ"!B41:B165, 2026-10-13. Exact names match the bot payload.
         const additionalWorks = ["Видеокамера сетевая цилиндрическая 2Mp","Видеокамера сетевая цилиндрическая 4Mp","Видеокамера сетевая цилиндрическая 5Mp","Видеокамера сетевая купольная с поворотным модулем 4Mp, встроенный микрофон","Видеорегистратор сетевой 32-канальный","Жесткий диск (HDD) для видеонаблюдения 8 ТБ","Монитор LCD 32\" UHD","Мышка оптическая беспроводная","Коммутатор PoE сетевой неуправляемый 16 портов + 2 uplink-порта","Коммутатор с 16 гигабитными портами","Шкаф телекоммуникационный 12U","Шкаф телекоммуникационный 9U","Органайзер кабельный для шкафа телекоммуникационного","Блок розеток для шкафа телекоммуникационного","Полка универсальная для шкафа телекоммуникационного","Модуль вентиляторный на 2 кулера для шкафа телекоммуникационного","Источник бесперебойного питания Online 2000VA","Источник бесперебойного питания Line-Interactive 2000VA","Видеокамера сетевая цилиндрическая 8Mp","Видеокамера сетевая цилиндрическая 4Mp, металлический корпус","Видеокамера сетевая купольная 2Mp","Видеокамера сетевая купольная 4Mp","Видеорегистратор сетевой 16-канальный","Коммутатор PoE сетевой неуправляемый 8 портов + 2 uplink-порта","Коммутатор PoE сетевой неуправляемый 4 порта + 2 uplink-порта","Жесткий диск (HDD) для видеонаблюдения 6 ТБ","Жесткий диск (HDD) для видеонаблюдения 10 ТБ","Кронштейн для монитора","Замок электромеханический","Звонок дверной","Блок питания для видеорегистратора 12В 5А","Аккумулятор 12V 9A/h","Кабель FTP cat. 5е","Коннектор RJ45","Кабель HDMI 10m","Кабель-канал пластиковый 40х25 мм","Кабель-канал пластиковый 60х60 мм","Труба гофрированная труба D=25","Крепежные материалы для системы видеонаблюдения","Монтаж видеокамеры","Монтаж настенного телекоммуникационного шкафа","Программирование и конфигурирование видеорегистраторов","Прокладка кабельных трасс","Прокладка кабельных трасс в трубе гофрированной","Монтаж кабель-канала пластикового","Пусконаладочные работы","Монтаж звонка","Монтаж электромеханического замка","Демонтаж видеокамеры","Демонтаж настенного телекоммуникационного шкафа","Демонтаж кабельных трасс","Демонтаж кабельных трасс в трубе гофрированной","Демонтаж кабель-канала пластикового","Демонтаж звонка","Демонтаж электромеханического замка","Оповещатель звуковой Марс 12-КП","Датчик движения ИК пассивный","Датчик разбития стекла","Извещатель охранный магнитоконтактный","Тревожная кнопка","Блок бесперебойного питания ББП-30","Аккумулятор 12V 7A/h","Кабель UTP 4х0,5","Кабель КСПВ 2х0,5","Провод однопарный ПУГНП 2х0,75","Кабель-канал пластиковый 40х40 мм","Кабель-канал пластиковый 16х16 мм","Крепежные материалы для системы охранной сигнализации","Монтаж блока бесперебойного питания ББП-30","Монтаж оповещателей, датчиков, извещателей","Контрольные и приёмно-сдаточные испытания","Демонтаж блока бесперебойного питания ББП-30","Демонтаж оповещателей, датчиков, извещателей","Приемно-контрольный прибор ALTAY-12","Датчик дымовой","Датчик тепловой","Однопозиционный дымовой линейный пожарный извещатель","Извещатель ручной","Табло световое ВЫХОД","Труба гофрированная D=16","Крепежные материалы для системы пожарной сигнализации","Монтаж приемно-контрольного прибора ALTAY-12","Монтаж линейного извещателя","Монтаж табло светового ВЫХОД","Демонтаж приемно-контрольного прибора ALTAY-12","Демонтаж табло светового ВЫХОД","Приемно-контрольный прибор ALTAY-8","Приемно-контрольный прибор ALTAY-16","(Командировочные) в г. Джизак","(Командировочные) в г. Самарканд","(Командировочные) в г. Андижан","(Командировочные) в г. Фергана","(Командировочные) в г. Наманган","(Командировочные) в г. Навои","(Командировочные) в г. Сырдарья","(Командировочные) в г. Сурхандарья","(Командировочные) в г. Кашкадарья","(Командировочные) в г. Бухара","Джизак, 1 паллетоместо","Самарканд, 1 паллетоместо","Андижан, 1 паллетоместо","Фергана, 1 паллетоместо","Наманган, 1 паллетоместо","Навои, 1 паллетоместо","Сырдарья, 1 паллетоместо","Сурхандарья, 1 паллетоместо","Кашкадарья, 1 паллетоместо","Бухара, 1 паллетоместо"];
         const extraWorks = document.getElementById('extraWorks');
-        additionalWorks.forEach(name => {
+        function addExtraRow(focus = false) {
             const row = document.createElement('div');
-            row.className = 'work-item';
-            const label = document.createElement('label');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = name;
-            label.append(checkbox, document.createTextNode(name));
+            row.className = 'extra-row';
+            const select = document.createElement('select');
+            select.className = 'extra-select';
+            select.setAttribute('aria-label', 'Дополнительная работа');
+            select.add(new Option('Выберите работу или оборудование', ''));
+            additionalWorks.forEach(name => select.add(new Option(name, name)));
+            const selectedName = document.createElement('span');
+            selectedName.className = 'extra-name';
+            selectedName.textContent = 'Количество';
             const qty = document.createElement('input');
             qty.type = 'number';
             qty.className = 'qty';
+            qty.min = '1';
+            qty.step = '1';
             qty.disabled = true;
             qty.placeholder = 'Кол.';
-            row.append(label, qty);
+            qty.setAttribute('aria-label', 'Количество дополнительной работы');
+            select.addEventListener('change', () => {
+                qty.disabled = !select.value;
+                if (select.value && !qty.value) qty.value = '1';
+                if (!select.value) qty.value = '';
+                selectedName.textContent = select.value || 'Количество';
+                qty.setAttribute('aria-label', 'Количество: ' + select.value);
+            });
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'remove-extra';
+            remove.textContent = '×';
+            remove.title = 'Удалить позицию';
+            remove.setAttribute('aria-label', 'Удалить позицию');
+            remove.addEventListener('click', () => {
+                row.remove();
+                document.getElementById('addExtra').focus();
+            });
+            row.append(select, selectedName, qty, remove);
             extraWorks.append(row);
-        });
+            if (focus) select.focus();
+        }
+        document.getElementById('addExtra').addEventListener('click', () => addExtraRow(true));
+        addExtraRow();
 
         const rows = [...document.querySelectorAll('.work-item')];
-        const extraRows = [...extraWorks.children];
-        function updateCount() {
-            const selected = extraRows.filter(row => row.querySelector('input[type="checkbox"]').checked).length;
-            document.getElementById('extraCount').textContent = 'Найдено: ' + extraRows.filter(row => !row.hidden).length + ' · Выбрано: ' + selected;
-        }
         rows.forEach(row => {
             const checkbox = row.querySelector('input[type="checkbox"]');
             const qty = row.querySelector('.qty');
@@ -233,19 +254,8 @@
             checkbox.addEventListener('change', () => {
                 qty.disabled = !checkbox.checked;
                 qty.value = checkbox.checked ? '1' : '';
-                updateCount();
             });
         });
-        document.getElementById('extraSearch').addEventListener('input', event => {
-            const terms = event.target.value.toLocaleLowerCase('ru').trim().split(/\s+/);
-            extraRows.forEach(row => {
-                const name = row.querySelector('input[type="checkbox"]').value.toLocaleLowerCase('ru');
-                row.hidden = !terms.every(term => name.includes(term));
-            });
-            document.getElementById('emptySearch').hidden = extraRows.some(row => !row.hidden);
-            updateCount();
-        });
-        updateCount();
 
         function notify(message) {
             if (tg?.platform && tg.platform !== 'unknown' && tg.isVersionAtLeast('6.2')) tg.showAlert(message);
@@ -253,22 +263,27 @@
         }
         document.getElementById('sendBtn').addEventListener('click', () => {
             const results = [];
-            for (const row of rows) {
+            for (const row of [...rows, ...extraWorks.children]) {
                 const checkbox = row.querySelector('input[type="checkbox"]');
-                if (!checkbox.checked) continue;
+                const select = row.querySelector('select');
+                if (select ? !select.value : !checkbox.checked) continue;
+                const name = select ? select.value : checkbox.value;
                 const input = row.querySelector('.qty');
                 const qty = Number(input.value);
                 if (!Number.isSafeInteger(qty) || qty <= 0) {
                     row.closest('details').open = true;
-                    if (row.hidden) {
-                        document.getElementById('extraSearch').value = '';
-                        document.getElementById('extraSearch').dispatchEvent(new Event('input'));
-                    }
                     input.focus();
-                    notify('Укажите целое количество больше нуля: ' + checkbox.value);
+                    notify('Укажите целое количество больше нуля: ' + name);
                     return;
                 }
-                results.push({ name: checkbox.value, qty });
+                const existing = results.find(item => item.name === name);
+                if (existing) {
+                    if (!Number.isSafeInteger(existing.qty + qty)) {
+                        notify('Слишком большое количество: ' + name);
+                        return;
+                    }
+                    existing.qty += qty;
+                } else results.push({ name, qty });
             }
             if (!results.length) {
                 notify('Выберите хотя бы одну работу.');
