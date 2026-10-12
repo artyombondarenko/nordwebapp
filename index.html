@@ -16,11 +16,15 @@
         input[type="checkbox"] { transform: scale(1.3); margin-right: 10px; }
         input[type="number"] { width: 50px; padding: 5px; font-size: 14px; text-align: center; border: 1px solid #ccc; border-radius: 5px;}
         
-        /* Стили для кастомных строк */
-        .custom-work-item { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
-        .custom-name { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
-        .custom-qty { width: 60px !important; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; text-align: center; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000);}
-        .add-btn { margin-top: 15px; width: 100%; padding: 10px; border-radius: 8px; border: 2px dashed var(--tg-theme-button-color, #3390ec); background: transparent; color: var(--tg-theme-button-color, #3390ec); font-weight: bold; cursor: pointer; font-size: 14px; }
+        * { box-sizing: border-box; }
+        label { min-width: 0; overflow-wrap: anywhere; gap: 8px; }
+        input[type="checkbox"] { flex: 0 0 auto; }
+        input[type="number"] { flex: 0 0 76px; width: 76px; min-height: 40px; }
+        .work-item { gap: 12px; }
+        .work-item[hidden] { display: none; }
+        #extraSearch { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #aaa; border-radius: 6px; font: inherit; color: inherit; background: var(--tg-theme-bg-color, #fff); }
+        #extraCount, #emptySearch { font-size: 14px; }
+        #sendBtn:disabled { opacity: .6; }
         
         #sendBtn { position: fixed; bottom: 15px; left: 15px; right: 15px; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 10px; border: none; background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
@@ -179,77 +183,115 @@
             </div>
         </details>
 
-        <details>
-            <summary>➕ Своя позиция / Доп. оборудование</summary>
-            <div id="customWorks">
-                <div class="custom-work-item">
-                    <input type="text" class="custom-name" placeholder="Наименование...">
-                    <input type="number" class="custom-qty" placeholder="шт" min="1">
-                </div>
-            </div>
-            <button type="button" id="addCustomBtn" class="add-btn">+ Добавить еще строку</button>
+        <details id="extraSection">
+            <summary>Дополнительные работы и оборудование</summary>
+            <input type="search" id="extraSearch" placeholder="Поиск по названию" aria-label="Поиск дополнительных работ">
+            <div id="extraCount" aria-live="polite"></div>
+            <div id="extraWorks"></div>
+            <p id="emptySearch" hidden>Ничего не найдено</p>
         </details>
 
     </div>
     <button id="sendBtn">Отправить отчет</button>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        const tg = window.Telegram?.WebApp;
+        tg?.ready();
+        tg?.expand();
+        // Snapshot of "Список работ"!B41:B165, 2026-10-13. Exact names match the bot payload.
+        const additionalWorks = ["Видеокамера сетевая цилиндрическая 2Mp","Видеокамера сетевая цилиндрическая 4Mp","Видеокамера сетевая цилиндрическая 5Mp","Видеокамера сетевая купольная с поворотным модулем 4Mp, встроенный микрофон","Видеорегистратор сетевой 32-канальный","Жесткий диск (HDD) для видеонаблюдения 8 ТБ","Монитор LCD 32\" UHD","Мышка оптическая беспроводная","Коммутатор PoE сетевой неуправляемый 16 портов + 2 uplink-порта","Коммутатор с 16 гигабитными портами","Шкаф телекоммуникационный 12U","Шкаф телекоммуникационный 9U","Органайзер кабельный для шкафа телекоммуникационного","Блок розеток для шкафа телекоммуникационного","Полка универсальная для шкафа телекоммуникационного","Модуль вентиляторный на 2 кулера для шкафа телекоммуникационного","Источник бесперебойного питания Online 2000VA","Источник бесперебойного питания Line-Interactive 2000VA","Видеокамера сетевая цилиндрическая 8Mp","Видеокамера сетевая цилиндрическая 4Mp, металлический корпус","Видеокамера сетевая купольная 2Mp","Видеокамера сетевая купольная 4Mp","Видеорегистратор сетевой 16-канальный","Коммутатор PoE сетевой неуправляемый 8 портов + 2 uplink-порта","Коммутатор PoE сетевой неуправляемый 4 порта + 2 uplink-порта","Жесткий диск (HDD) для видеонаблюдения 6 ТБ","Жесткий диск (HDD) для видеонаблюдения 10 ТБ","Кронштейн для монитора","Замок электромеханический","Звонок дверной","Блок питания для видеорегистратора 12В 5А","Аккумулятор 12V 9A/h","Кабель FTP cat. 5е","Коннектор RJ45","Кабель HDMI 10m","Кабель-канал пластиковый 40х25 мм","Кабель-канал пластиковый 60х60 мм","Труба гофрированная труба D=25","Крепежные материалы для системы видеонаблюдения","Монтаж видеокамеры","Монтаж настенного телекоммуникационного шкафа","Программирование и конфигурирование видеорегистраторов","Прокладка кабельных трасс","Прокладка кабельных трасс в трубе гофрированной","Монтаж кабель-канала пластикового","Пусконаладочные работы","Монтаж звонка","Монтаж электромеханического замка","Демонтаж видеокамеры","Демонтаж настенного телекоммуникационного шкафа","Демонтаж кабельных трасс","Демонтаж кабельных трасс в трубе гофрированной","Демонтаж кабель-канала пластикового","Демонтаж звонка","Демонтаж электромеханического замка","Оповещатель звуковой Марс 12-КП","Датчик движения ИК пассивный","Датчик разбития стекла","Извещатель охранный магнитоконтактный","Тревожная кнопка","Блок бесперебойного питания ББП-30","Аккумулятор 12V 7A/h","Кабель UTP 4х0,5","Кабель КСПВ 2х0,5","Провод однопарный ПУГНП 2х0,75","Кабель-канал пластиковый 40х40 мм","Кабель-канал пластиковый 16х16 мм","Крепежные материалы для системы охранной сигнализации","Монтаж блока бесперебойного питания ББП-30","Монтаж оповещателей, датчиков, извещателей","Контрольные и приёмно-сдаточные испытания","Демонтаж блока бесперебойного питания ББП-30","Демонтаж оповещателей, датчиков, извещателей","Приемно-контрольный прибор ALTAY-12","Датчик дымовой","Датчик тепловой","Однопозиционный дымовой линейный пожарный извещатель","Извещатель ручной","Табло световое ВЫХОД","Труба гофрированная D=16","Крепежные материалы для системы пожарной сигнализации","Монтаж приемно-контрольного прибора ALTAY-12","Монтаж линейного извещателя","Монтаж табло светового ВЫХОД","Демонтаж приемно-контрольного прибора ALTAY-12","Демонтаж табло светового ВЫХОД","Приемно-контрольный прибор ALTAY-8","Приемно-контрольный прибор ALTAY-16","(Командировочные) в г. Джизак","(Командировочные) в г. Самарканд","(Командировочные) в г. Андижан","(Командировочные) в г. Фергана","(Командировочные) в г. Наманган","(Командировочные) в г. Навои","(Командировочные) в г. Сырдарья","(Командировочные) в г. Сурхандарья","(Командировочные) в г. Кашкадарья","(Командировочные) в г. Бухара","Джизак, 1 паллетоместо","Самарканд, 1 паллетоместо","Андижан, 1 паллетоместо","Фергана, 1 паллетоместо","Наманган, 1 паллетоместо","Навои, 1 паллетоместо","Сырдарья, 1 паллетоместо","Сурхандарья, 1 паллетоместо","Кашкадарья, 1 паллетоместо","Бухара, 1 паллетоместо"];
+        const extraWorks = document.getElementById('extraWorks');
+        additionalWorks.forEach(name => {
+            const row = document.createElement('div');
+            row.className = 'work-item';
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = name;
+            label.append(checkbox, document.createTextNode(name));
+            const qty = document.createElement('input');
+            qty.type = 'number';
+            qty.className = 'qty';
+            qty.disabled = true;
+            qty.placeholder = 'Кол.';
+            row.append(label, qty);
+            extraWorks.append(row);
+        });
 
-        // Включение поля количества при нажатии на галочку
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                let input = this.closest('.work-item').querySelector('.qty');
-                if(this.checked) {
-                    input.disabled = false; input.value = 1;
-                } else {
-                    input.disabled = true; input.value = '';
-                }
+        const rows = [...document.querySelectorAll('.work-item')];
+        const extraRows = [...extraWorks.children];
+        function updateCount() {
+            const selected = extraRows.filter(row => row.querySelector('input[type="checkbox"]').checked).length;
+            document.getElementById('extraCount').textContent = 'Найдено: ' + extraRows.filter(row => !row.hidden).length + ' · Выбрано: ' + selected;
+        }
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const qty = row.querySelector('.qty');
+            qty.min = '1';
+            qty.step = '1';
+            qty.setAttribute('aria-label', 'Количество: ' + checkbox.value);
+            checkbox.addEventListener('change', () => {
+                qty.disabled = !checkbox.checked;
+                qty.value = checkbox.checked ? '1' : '';
+                updateCount();
             });
         });
-
-        // Добавление новой пустой строки для ручного ввода
-        document.getElementById('addCustomBtn').addEventListener('click', () => {
-            const container = document.getElementById('customWorks');
-            const div = document.createElement('div');
-            div.className = 'custom-work-item';
-            div.innerHTML = `
-                <input type="text" class="custom-name" placeholder="Наименование...">
-                <input type="number" class="custom-qty" placeholder="шт" min="1">
-            `;
-            container.appendChild(div);
+        document.getElementById('extraSearch').addEventListener('input', event => {
+            const terms = event.target.value.toLocaleLowerCase('ru').trim().split(/\s+/);
+            extraRows.forEach(row => {
+                const name = row.querySelector('input[type="checkbox"]').value.toLocaleLowerCase('ru');
+                row.hidden = !terms.every(term => name.includes(term));
+            });
+            document.getElementById('emptySearch').hidden = extraRows.some(row => !row.hidden);
+            updateCount();
         });
+        updateCount();
 
-        // Отправка данных обратно в бота
+        function notify(message) {
+            if (tg?.platform && tg.platform !== 'unknown' && tg.isVersionAtLeast('6.2')) tg.showAlert(message);
+            else window.alert(message);
+        }
         document.getElementById('sendBtn').addEventListener('click', () => {
-            let results = [];
-            
-            // 1. Собираем стандартные работы (где стоят галочки)
-            document.querySelectorAll('.work-item').forEach(item => {
-                let checkbox = item.querySelector('input[type="checkbox"]');
-                if(checkbox.checked) {
-                    let qty = item.querySelector('.qty').value;
-                    results.push({ name: checkbox.value, qty: parseInt(qty) || 1 });
+            const results = [];
+            for (const row of rows) {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (!checkbox.checked) continue;
+                const input = row.querySelector('.qty');
+                const qty = Number(input.value);
+                if (!Number.isSafeInteger(qty) || qty <= 0) {
+                    row.closest('details').open = true;
+                    if (row.hidden) {
+                        document.getElementById('extraSearch').value = '';
+                        document.getElementById('extraSearch').dispatchEvent(new Event('input'));
+                    }
+                    input.focus();
+                    notify('Укажите целое количество больше нуля: ' + checkbox.value);
+                    return;
                 }
-            });
-
-            // 2. Собираем кастомные работы (введенные текстом)
-            document.querySelectorAll('.custom-work-item').forEach(item => {
-                let name = item.querySelector('.custom-name').value.trim();
-                let qty = item.querySelector('.custom-qty').value;
-                if(name !== '') { // Если мастер что-то написал
-                    results.push({ name: name, qty: parseInt(qty) || 1 });
-                }
-            });
-
-            // Если вообще ничего не выбрано и не написано
-            if(results.length === 0) {
-                tg.showAlert("Выберите хотя бы одну работу или впишите свою!");
+                results.push({ name: checkbox.value, qty });
+            }
+            if (!results.length) {
+                notify('Выберите хотя бы одну работу.');
                 return;
             }
-
-            tg.sendData(JSON.stringify(results));
+            const payload = JSON.stringify(results);
+            if (new TextEncoder().encode(payload).length > 4096) {
+                notify('Слишком много позиций для одного отчета. Сократите список выбранных работ.');
+                return;
+            }
+            if (!tg?.platform || tg.platform === 'unknown') {
+                notify('Откройте отчет кнопкой в Telegram-боте.');
+                return;
+            }
+            const button = document.getElementById('sendBtn');
+            button.disabled = true;
+            try {
+                tg.sendData(payload);
+                window.setTimeout(() => { button.disabled = false; }, 3000);
+            } catch (error) {
+                button.disabled = false;
+                notify('Не удалось отправить отчет. Попробуйте еще раз.');
+            }
         });
     </script>
 </body>
